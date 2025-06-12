@@ -281,9 +281,6 @@ const resetToDefault = () => {
           >
             停止
           </button>
-          <button onClick={doFinal} >
-            最終テスト用
-          </button>
           <button onClick={resetToDefault}>デフォルトに戻す</button>
           </div>
       </div>
