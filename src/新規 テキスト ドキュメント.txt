@@ -13,7 +13,7 @@ export default function App() {
   };
 
   const [running, setRunning] = useState(false);
-  const [phase, setPhase] = useState('çµ‚äº†');
+  const [phase, setPhase] = useState('I—¹');
   const [bg, setBg] = useState('white');
   const [color, setColor] = useState('black');
 
@@ -44,17 +44,8 @@ export default function App() {
     }
   }, [audioSrc]);
 
-  // ä¿å­˜æ™‚
   useEffect(() => {
-   const config = {
-      brthOut,
-      brthIn,
-      endCond,
-      endTime,
-      timeLen,
-      audioSrc,
-      tz
-    };
+    const config = { brthOut, brthIn, endCond, endTime, timeLen, audioSrc, tz };
     localStorage.setItem('breath-config', JSON.stringify(config));
   }, [brthOut, brthIn, endCond, endTime, timeLen, audioSrc, tz]);
 
@@ -63,24 +54,20 @@ export default function App() {
     if (endCond === 'deadline') {
       const [h, m] = endTime.split(':').map(Number);
       let end = now.set({ hour: h, minute: m, second: 0, millisecond: 0 });
-      if (end <= now) {
-        end = end.plus({ days: 1 });
-      }
+      if (end <= now) end = end.plus({ days: 1 });
       return end.toMillis();
     } else {
       return now.plus({ minutes: parseInt(timeLen) || 0 }).toMillis();
     }
   };
 
-  // æœ€çµ‚å‘¼æ°—å¾Œã®ç‰¹æ®Šå‡¦ç†
   const doFinal = () => {
-    // å‘¼æ°—é•·ã«å¿œã˜ãŸãƒ«ãƒ¼ãƒ«æ±ºå®š
     const n = parseInt(brthOut);
     let wait, repeats;
     if (n >= 17) {
       wait = 4; repeats = 12;
     } else if (n === 16) {
-      wait =  3; repeats = 12;
+      wait = 3; repeats = 12;
     } else if (n >= 5) {
       wait = 2; repeats = n - 3;
     } else if (n >= 2) {
@@ -89,7 +76,7 @@ export default function App() {
       wait = 1; repeats = 0;
     }
 
-    setPhase('æœ€çµ‚ å‘¼æ°£');
+    setPhase('ÅI ŒÄŸ†');
     setBg('lime');
     setColor('black');
     play();
@@ -100,11 +87,10 @@ export default function App() {
         if (i >= repeats) {
           clearInterval(iv);
           setTimeout(() => {
-            setPhase('æœ€çµ‚ å¸æ°£');
+            setPhase('ÅI ‹zŸ†');
             setBg('blue');
             setColor('yellow');
             play();
-            // æœ€å¾Œã®å¸æ°—å¾Œã«åœæ­¢
             setTimeout(stop, parseInt(brthIn) * 1000);
           }, 2000);
         } else {
@@ -115,19 +101,18 @@ export default function App() {
     }, wait * 1000);
   };
 
-  // å‘¼å¸ãƒ«ãƒ¼ãƒ—é–‹å§‹
   const start = () => {
     if (running) return;
 
     const out = parseInt(brthOut);
     const inn = parseInt(brthIn);
     if (!out || !inn || out <= 0 || inn <= 0 || out > 180 || inn > 180) {
-      alert('å¸æ°—ãƒ»å‘¼æ°—ç§’æ•°ã¯1ï½180ã®æ•°å€¤ã§å…¥åŠ›ã—ã¦ãã ã•ã„ã€‚');
+      alert('‹z‹CEŒÄ‹C•b”‚Í1`180‚Ì”’l‚Å“ü—Í‚µ‚Ä‚­‚¾‚³‚¢B');
       return;
     }
 
     if (endCond === 'time' && (!parseInt(timeLen) > 1440 || parseInt(timeLen) <= 0)) {
-      alert('æ™‚é–“ï¼ˆåˆ†ï¼‰ã¯1ï½1440ã®æ•°å€¤ã§å…¥åŠ›ã—ã¦ãã ã•ã„ã€‚');
+      alert('ŠÔi•ªj‚Í1`1440‚Ì”’l‚Å“ü—Í‚µ‚Ä‚­‚¾‚³‚¢B');
       return;
     }
 
@@ -136,44 +121,39 @@ export default function App() {
 
     const loop = () => {
       const now = Date.now();
-      const totalNext = out * 1000 + inn * 1000;
-
-      if (now + totalNext > deadline) {
+      if (now > deadline) {
         doFinal();
         return;
       }
 
-      // å‘¼æ°—
-      setPhase('å‘¼æ°£');
+      setPhase('ŒÄŸ†');
       setBg('green');
       setColor('purple');
       play();
 
       timerRef.current = setTimeout(() => {
-        // å¸æ°—
-        setPhase('å¸æ°£');
+        setPhase('‹zŸ†');
         setBg('blue');
         setColor('yellow');
         play();
 
         timerRef.current = setTimeout(() => {
-          // æ¬¡ã®ãƒ«ãƒ¼ãƒ—
           loop();
         }, inn * 1000);
       }, out * 1000);
     };
-    loop();
+
+    loop();  // š ŒÄ‹zƒ‹[ƒv‚ğŠJn
   };
 
   const stop = () => {
     clearTimeout(timerRef.current);
     setRunning(false);
-    setPhase('çµ‚äº†');
+    setPhase('I—¹');
     setBg('white');
     setColor('black');
   };
 
-  // éŸ³å£°å†ç”Ÿ
   const play = () => {
     const a = audioRef.current;
     if (a) {
@@ -182,12 +162,11 @@ export default function App() {
     }
   };
 
-  // éŸ³å£°ãƒ•ã‚¡ã‚¤ãƒ«ã®èª­ã¿è¾¼ã¿
   const onAudioChange = (e) => {
     const file = e.target.files?.[0];
     if (file) {
       const url = URL.createObjectURL(file);
-        setAudioSrc(url);
+      setAudioSrc(url);
     }
   };
 
@@ -200,10 +179,7 @@ export default function App() {
     setAudioSrc(defaultConfig.audioSrc);
     setTz(defaultConfig.tz);
 
-    // localStorage ã‚‚åˆæœŸåŒ–
     localStorage.setItem('breath-config', JSON.stringify(defaultConfig));
-
-    // ğŸ”§ ãƒ•ã‚¡ã‚¤ãƒ«å…¥åŠ›æ¬„ã‚‚ãƒªã‚»ãƒƒãƒˆ
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -212,10 +188,10 @@ export default function App() {
   return (
     <>
       <audio ref={audioRef} src={audioSrc} preload="auto" />
-        <div style={{ background: bg, color, minHeight: '100vh', padding: 20 }}>
-        <h1>æ°£ã®å‘¼å¸æ³•</h1>
+      <div style={{ background: bg, color, minHeight: '100vh', padding: 20 }}>
+        <h1>Ÿ†‚ÌŒÄ‹z–@</h1>
         <div>
-          å‘¼æ°£ç§’æ•°ï¼š
+          ŒÄŸ†•b”F
           <input
             type="number"
             min="1"
@@ -223,7 +199,7 @@ export default function App() {
             value={brthOut}
             onChange={e => setBrthOut(e.target.value)}
           />
-          å¸æ°£ç§’æ•°ï¼š
+          ‹zŸ†•b”F
           <input
             type="number"
             min="1"
@@ -233,68 +209,68 @@ export default function App() {
           />
         </div>
         <div>
-          çµ‚äº†æ–¹æ³•ï¼š
-            <select value={endCond} onChange={e => setEndCond(e.target.value)}>
-              <option value="deadline">çµ‚äº†æ™‚åˆ»</option>
-              <option value="time">æ™‚é–“ï¼ˆåˆ†ï¼‰</option>
-            </select>
-            {endCond === 'time' ? (
-              <>
-                <input
-                  type="number"
-                  min="1"
-                  max="1440"
-                  value={timeLen}
-                  onChange={e => setTimeLen(e.target.value)}
-                />
-                <span>åˆ†</span>
-              </>
-            ) : (
-              <>
+          I—¹•û–@F
+          <select value={endCond} onChange={e => setEndCond(e.target.value)}>
+            <option value="deadline">I—¹</option>
+            <option value="time">ŠÔi•ªj</option>
+          </select>
+          {endCond === 'time' ? (
+            <>
+              <input
+                type="number"
+                min="1"
+                max="1440"
+                value={timeLen}
+                onChange={e => setTimeLen(e.target.value)}
+              />
+              <span>•ª</span>
+            </>
+          ) : (
+            <>
               <input
                 type="time"
                 value={endTime}
                 onChange={e => setEndTime(e.target.value)}
               />
-                ï¼ˆãƒ­ã‚±ãƒ¼ãƒ«:
-                <select value={tz} onChange={e => setTz(e.target.value)}>
-                  <option value="Asia/Tokyo">æ—¥æœ¬ï¼ˆæ±äº¬ï¼‰</option>
-                  <option value="Europe/Stockholm">ã‚¹ã‚¦ã‚§ãƒ¼ãƒ‡ãƒ³ï¼ˆã‚¹ãƒˆãƒƒã‚¯ãƒ›ãƒ«ãƒ ï¼‰</option>
-                  <option value="UTC">UTC</option>
-                </select>ï¼‰
-              </>
-            )}
-          </div>
-          <div>
-            éŸ³å£°ãƒ•ã‚¡ã‚¤ãƒ«ï¼š
-            <input type="file"  accept="audio/*" ref={fileInputRef} onChange={onAudioChange}/>
-            <div>{audioSrc.includes('hyoushigi.mp3') ? 'â€»éŸ³å£°ãƒ•ã‚¡ã‚¤ãƒ«ãŒé¸æŠã•ã‚Œã¦ã„ãªã„å ´åˆã¯ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆéŸ³å£°ã‚’ä½¿ç”¨ã—ã¾ã™ã€‚' : ''}</div>
-          </div>
-
-          <div style={{ marginTop: 20, fontSize: 24 }}>{phase}</div>
-
-          <div style={{ marginTop: 20 }}>
-            <button 
-              onClick={start}
-              style={{
-                opacity: running ? 0.5 : 1,
-                pointerEvents: running ? 'none' : 'auto'
-              }}
-            >
-              é–‹å§‹
-            </button>
-            <button onClick={stop}
-              style={{
-                opacity: !running ? 0.5 : 1,
-                pointerEvents: !running ? 'none' : 'auto'
-              }}
-            >
-              åœæ­¢
-            </button>
-            <button onClick={resetToDefault}>ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆã«æˆ»ã™</button>
-            </div>
+              iƒƒP[ƒ‹:
+              <select value={tz} onChange={e => setTz(e.target.value)}>
+                <option value="Asia/Tokyo">“ú–{i“Œ‹j</option>
+                <option value="Europe/Stockholm">ƒXƒEƒF[ƒfƒ“iƒXƒgƒbƒNƒzƒ‹ƒ€j</option>
+                <option value="UTC">UTC</option>
+              </select>j
+            </>
+          )}
+        </div>
+        <div>
+          ‰¹ºƒtƒ@ƒCƒ‹F
+          <input type="file" accept="audio/*" ref={fileInputRef} onChange={onAudioChange} />
+          <div>{audioSrc.includes('hyoushigi.mp3') ? '¦‰¹ºƒtƒ@ƒCƒ‹‚ª‘I‘ğ‚³‚ê‚Ä‚¢‚È‚¢ê‡‚ÍƒfƒtƒHƒ‹ƒg‰¹º‚ğg—p‚µ‚Ü‚·B' : ''}</div>
         </div>
 
-      </>
-    );
+        <div style={{ marginTop: 20, fontSize: 24 }}>{phase}</div>
+
+        <div style={{ marginTop: 20 }}>
+          <button
+            onClick={start}
+            style={{
+              opacity: running ? 0.5 : 1,
+              pointerEvents: running ? 'none' : 'auto'
+            }}
+          >
+            ŠJn
+          </button>
+          <button
+            onClick={stop}
+            style={{
+              opacity: !running ? 0.5 : 1,
+              pointerEvents: !running ? 'none' : 'auto'
+            }}
+          >
+            ’â~
+          </button>
+          <button onClick={resetToDefault}>ƒfƒtƒHƒ‹ƒg‚É–ß‚·</button>
+        </div>
+      </div>
+    </>
+  );
 }
