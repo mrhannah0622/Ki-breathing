@@ -4,7 +4,7 @@ import { DateTime } from 'luxon';
 export default function App() {
 const defaultConfig = {
   brthOut: 20,
-  brthIn: 18,
+  brthIn: 16,
   endCond: 'deadline',
   endTime: '08:00',
   timeLen: 20,
@@ -13,7 +13,7 @@ const defaultConfig = {
 };
 
   const [running, setRunning] = useState(false);
-  const [phase, setPhase] = useState('');
+  const [phase, setPhase] = useState('終了');
   const [bg, setBg] = useState('white');
   const [color, setColor] = useState('black');
 
@@ -29,14 +29,13 @@ const defaultConfig = {
     }
   })();
 
-  const [brthOut, setBrthOut] = useState(savedCfg.brthOut ?? 20);
-  const [brthIn, setBrthIn] = useState(savedCfg.brthIn ?? 18);
+  const [brthOut, setBrthOut] = useState(savedCfg.brthOut ?? '');
+  const [brthIn, setBrthIn] = useState(savedCfg.brthIn ?? '');
   const [endCond, setEndCond] = useState(savedCfg.endCond ?? 'deadline');
   const [endTime, setEndTime] = useState(savedCfg.endTime ?? '08:00');
-  const [timeLen, setTimeLen] = useState(savedCfg.timeLen ?? 20);
+  const [timeLen, setTimeLen] = useState(savedCfg.timeLen ?? '');
   const [audioSrc, setAudioSrc] = useState(savedCfg.audioSrc ?? '/hyoushigi.mp3');
   const [tz, setTz] = useState(savedCfg.tz ?? 'Asia/Tokyo');
-  const [loaded, setLoaded] = useState(true); // ← useEffectは不要になるのでtrueでOK
 
   useEffect(() => {
     if (audioRef.current) {
@@ -46,7 +45,7 @@ const defaultConfig = {
 
   // 保存時
   useEffect(() => {
-    const config = {
+   const config = {
       brthOut,
       brthIn,
       endCond,
@@ -68,14 +67,14 @@ const defaultConfig = {
       }
       return end.toMillis();
     } else {
-      return now.plus({ minutes: timeLen }).toMillis();
+      return now.plus({ minutes: parseInt(timeLen) || 0 }).toMillis();
     }
   };
 
   // 最終呼気後の特殊処理
   const doFinal = () => {
     // 呼気長に応じたルール決定
-    const n = brthOut;
+    const n = parseInt(brthOut);
     let wait, repeats;
     if (n >= 17) {
       wait = 4; repeats = 12;
@@ -83,8 +82,10 @@ const defaultConfig = {
       wait =  3; repeats = 12;
     } else if (n >= 5) {
       wait = 2; repeats = n - 3;
-    } else {
+    } else if (n >= 2) {
       wait = 1; repeats = n - 2;
+    } else {
+      wait = 1; repeats = 0;
     }
 
     setPhase('最終 呼氣');
@@ -103,7 +104,7 @@ const defaultConfig = {
             setColor('yellow');
             play();
             // 最後の吸気後に停止
-            setTimeout(stop, brthIn * 1000);
+            setTimeout(stop, parseInt(brthIn) * 1000);
           }, 2000);
         } else {
           play();
@@ -116,17 +117,31 @@ const defaultConfig = {
   // 呼吸ループ開始
   const start = () => {
     if (running) return;
-    if (!audioRef.current) return;
 
-    // ここで初回の音を鳴らす
-    audioRef.current.currentTime=0;
-    audioRef.current.play().then(() => {
+    const out = parseInt(brthOut);
+    const inn = parseInt(brthIn);
+    if (!out || !inn || out <= 0 || inn <= 0 || out > 180 || inn > 180) {
+      alert('吸気・呼気秒数は1～180の数値で入力してください。');
+      return;
+    }
+
+    if (endCond === 'time' && (!parseInt(timeLen) > 1440 || parseInt(timeLen) <= 0)) {
+      alert('時間（分）は1～1440の数値で入力してください。');
+      return;
+    }
 
     setRunning(true);
-
     const deadline = calcDeadline();
 
     const loop = () => {
+      const now = Date.now();
+      const totalNext = out * 1000 + inn * 1000;
+
+      if (now + totalNext > deadline) {
+        doFinal();
+        return;
+      }
+
       // 呼気
       setPhase('呼氣');
       setBg('green');
@@ -134,32 +149,21 @@ const defaultConfig = {
       play();
 
       timerRef.current = setTimeout(() => {
-        const now = Date.now();
-        // 次の吸気終了が終わりの判定を超えるかどうか
-        if (now + brthIn * 1000 > deadline) {
-          doFinal();
-          return;
-        }
-
         // 吸気
         setPhase('吸氣');
         setBg('blue');
         setColor('yellow');
         play();
-
-        timerRef.current = setTimeout(loop, brthIn * 1000);
-      }, brthOut * 1000);
+        timerRef.current = setTimeout(doFinal, inn * 1000);
+      }, out * 1000);
     };
-
     loop();
-  }).catch((e) => {
-    console.warn("音声再生失敗:", e);
-  });
-};
+  };
+
   const stop = () => {
     clearTimeout(timerRef.current);
     setRunning(false);
-    setPhase('停止');
+    setPhase('終了');
     setBg('white');
     setColor('black');
   };
@@ -205,19 +209,17 @@ const resetToDefault = () => {
           <input
             type="number"
             min="1"
-            max="120"
+            max="180"
             value={brthOut}
-            onChange={e => setBrthOut(Math.min(120, Math.max(1, +e.target.value)))
-            }
+            onChange={e => setBrthOut(e.target.value)}
           />
           吸氣秒数：
           <input
             type="number"
             min="1"
-            max="120"
+            max="180"
             value={brthIn}
-            onChange={e => setBrthIn(Math.min(120, Math.max(1, +e.target.value)))
-            }
+            onChange={e => setBrthIn(e.target.value)}
           />
         </div>
 
@@ -232,10 +234,9 @@ const resetToDefault = () => {
               <input
                 type="number"
                 min="1"
+                max="1440"
                 value={timeLen}
-                onChange={e =>
-                  setTimeLen(Math.max(1, +e.target.value))
-                }
+                onChange={e => setTimeLen(e.target.value)}
               />
               <span>分</span>
             </>
@@ -258,7 +259,7 @@ const resetToDefault = () => {
         <div>
           音声ファイル：
           <input type="file"  accept="audio/*" onChange={onAudioChange}/>
-          <div>現在: {audioSrc.includes('hyoushigi.mp3') ? 'デフォルト (hyoushigi.mp3)' : 'カスタム音声'}</div>
+          <div>{audioSrc.includes('hyoushigi.mp3') ? '※音声ファイルが選択されていない場合はデフォルト音声を使用します。' : ''}</div>
         </div>
 
         <div style={{ marginTop: 20, fontSize: 24 }}>{phase}</div>
