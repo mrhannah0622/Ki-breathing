@@ -2,15 +2,15 @@ import { useState, useEffect, useRef } from 'react';
 import { DateTime } from 'luxon';
 
 export default function App() {
-const defaultConfig = {
-  brthOut: 20,
-  brthIn: 16,
-  endCond: 'deadline',
-  endTime: '08:00',
-  timeLen: 20,
-  audioSrc: '/hyoushigi.mp3',
-  tz: 'Asia/Tokyo'
-};
+  const defaultConfig = {
+    brthOut: 20,
+    brthIn: 16,
+    endCond: 'deadline',
+    endTime: '08:00',
+    timeLen: 20,
+    audioSrc: '/hyoushigi.mp3',
+    tz: 'Asia/Tokyo'
+  };
 
   const [running, setRunning] = useState(false);
   const [phase, setPhase] = useState('終了');
@@ -19,6 +19,7 @@ const defaultConfig = {
 
   const timerRef = useRef();
   const audioRef = useRef();
+  const fileInputRef = useRef();
 
   const savedCfg = (() => {
     try {
@@ -197,6 +198,11 @@ const resetToDefault = () => {
 
   // localStorage も初期化
   localStorage.setItem('breath-config', JSON.stringify(defaultConfig));
+
+  // 🔧 ファイル入力欄もリセット
+  if (fileInputRef.current) {
+    fileInputRef.current.value = '';
+  }
 };
 
   return (
@@ -258,7 +264,7 @@ const resetToDefault = () => {
         </div>
         <div>
           音声ファイル：
-          <input type="file"  accept="audio/*" onChange={onAudioChange}/>
+          <input type="file"  accept="audio/*" ref={fileInputRef} onChange={onAudioChange}/>
           <div>{audioSrc.includes('hyoushigi.mp3') ? '※音声ファイルが選択されていない場合はデフォルト音声を使用します。' : ''}</div>
         </div>
 
