@@ -175,13 +175,13 @@ export default function App() {
 
   // 音声再生
   const play = () => {
-    const a = audioRef.current;
-    if (a) {
-      a.currentTime = 0;
-      a.play().catch(() => {});
+    if (audioRef.current) {
+      const newAudio = audioRef.current.cloneNode(true);
+      newAudio.play().catch((e) => {
+        console.error('音声再生エラー:', e);
+      });
     }
   };
-
   // 音声ファイルの読み込み
   const onAudioChange = (e) => {
     const file = e.target.files?.[0];
