@@ -14,8 +14,8 @@ export default function App() {
 
   const [running, setRunning] = useState(false);
   const [phase, setPhase] = useState('終了');
-  const [bg, setBg] = useState('white');
-  const [color, setColor] = useState('black');
+  const [bg, setBg] = useState('#ffffff');
+  const [color, setColor] = useState('#000000');
 
   const timerRef = useRef();
   const audioRef = useRef();
@@ -37,6 +37,9 @@ export default function App() {
   const [timeLen, setTimeLen] = useState(savedCfg.timeLen ?? '');
   const [audioSrc, setAudioSrc] = useState(savedCfg.audioSrc ?? '/hyoushigi.mp3');
   const [tz, setTz] = useState(savedCfg.tz ?? 'Asia/Tokyo');
+  const [deadlineMs, setDeadlineMs] = useState(null);
+  const [nowMs, setNowMs] = useState(Date.now());
+  const [startTimeMs, setStartTimeMs] = useState(null);
 
   useEffect(() => {
     if (audioRef.current) {
@@ -57,6 +60,14 @@ export default function App() {
     };
     localStorage.setItem('breath-config', JSON.stringify(config));
   }, [brthOut, brthIn, endCond, endTime, timeLen, audioSrc, tz]);
+
+  useEffect(() => {
+    if (!running) return;
+    const interval = setInterval(() => {
+      setNowMs(Date.now());
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [running]);
 
   const calcDeadline = () => {
     const now = DateTime.local().setZone(tz);
@@ -90,8 +101,8 @@ export default function App() {
     }
 
     setPhase('最終 呼氣');
-    setBg('lime');
-    setColor('black');
+    setBg('#ffe5cc');
+    setColor('#663300');
     play();
 
     setTimeout(() => {
@@ -101,8 +112,8 @@ export default function App() {
           clearInterval(iv);
           setTimeout(() => {
             setPhase('最終 吸氣');
-            setBg('blue');
-            setColor('yellow');
+            setBg('#fff2cc');
+            setColor('#665500');
             play();
             // 最後の吸気後に停止
             setTimeout(stop, parseInt(brthIn) * 1000);
@@ -133,6 +144,9 @@ export default function App() {
 
     setRunning(true);
     const deadline = calcDeadline();
+    const now = Date.now();
+    setStartTimeMs(now);
+    setDeadlineMs(deadline);
 
     const loop = () => {
       const now = Date.now();
@@ -145,15 +159,17 @@ export default function App() {
 
       // 呼気
       setPhase('呼氣');
-      setBg('green');
-      setColor('purple');
+      setBg('#d0f0c0');  // 明るめの緑
+      setColor('#003300');  // 落ち着いた濃緑
+      // setBg('green');
+      // setColor('purple');
       play();
 
       timerRef.current = setTimeout(() => {
         // 吸気
         setPhase('吸氣');
-        setBg('blue');
-        setColor('yellow');
+        setBg('#cce5ff');
+        setColor('#002244');
         play();
 
         timerRef.current = setTimeout(() => {
@@ -169,8 +185,8 @@ export default function App() {
     clearTimeout(timerRef.current);
     setRunning(false);
     setPhase('終了');
-    setBg('white');
-    setColor('black');
+    setBg('#ffffff');
+    setColor('#000000');
   };
 
   // 音声再生
@@ -207,6 +223,13 @@ export default function App() {
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
+  };
+
+  const formatTime = (ms) => {
+    const totalSeconds = Math.max(0, Math.floor(ms / 1000));
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}分${seconds}秒`;
   };
 
   return (
@@ -272,7 +295,18 @@ export default function App() {
           </div>
 
           <div style={{ marginTop: 20, fontSize: 24 }}>{phase}</div>
-
+          {deadlineMs && running && (
+            <div style={{ marginTop: 20 }}>
+              <progress
+                value={nowMs - startTimeMs}
+                max={deadlineMs - startTimeMs}
+                style={{ width: '100%', height: '20px' }}
+              ></progress>
+              <div style={{ textAlign: 'center', marginTop: 4 }}>
+                残り時間：{formatTime(deadlineMs - nowMs)}
+              </div>
+            </div>
+          )}
           <div style={{ marginTop: 20 }}>
             <button 
               onClick={start}
