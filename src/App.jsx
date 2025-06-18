@@ -1,7 +1,53 @@
 import { useState, useEffect, useRef } from 'react';
 import { DateTime } from 'luxon';
 
-export default function App() {
+function App() {
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallButton, setShowInstallButton] = useState(false);
+useEffect(() => {
+  window.addEventListener('beforeinstallprompt', (e) => {
+    console.log('✅ beforeinstallprompt イベントを検出', e);
+  });
+
+  window.addEventListener('appinstalled', () => {
+    console.log('✅ アプリがインストールされました');
+  });
+}, []);
+
+
+  useEffect(() => {
+    const handler = (e) => {
+      // 自動表示をキャンセルして、手動で出すようにする
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallButton(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handler);
+
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      console.log('ユーザーがインストールしました');
+    } else {
+      console.log('ユーザーがインストールをキャンセルしました');
+    }
+    setDeferredPrompt(null);
+    setShowInstallButton(false);
+  };
+  useEffect(() => {
+    const isIos = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+    const isInStandaloneMode = window.matchMedia('(display-mode: standalone)').matches;
+    if (isIos && !isInStandaloneMode) {
+      alert('iOSでは「ホーム画面に追加」でアプリとして使えます');
+    }
+  }, []);
+
   const defaultConfig = {
     brthOut: 20,
     brthIn: 16,
@@ -30,11 +76,11 @@ export default function App() {
     }
   })();
 
-  const [brthOut, setBrthOut] = useState(savedCfg.brthOut ?? '');
-  const [brthIn, setBrthIn] = useState(savedCfg.brthIn ?? '');
+  const [brthOut, setBrthOut] = useState(savedCfg.brthOut ?? defaultConfig.brthOut);
+  const [brthIn, setBrthIn] = useState(savedCfg.brthIn ?? defaultConfig.brthIn);
   const [endCond, setEndCond] = useState(savedCfg.endCond ?? 'deadline');
   const [endTime, setEndTime] = useState(savedCfg.endTime ?? '08:00');
-  const [timeLen, setTimeLen] = useState(savedCfg.timeLen ?? '');
+  const [timeLen, setTimeLen] = useState(savedCfg.timeLen ?? defaultConfig.timeLen);
   const [audioSrc, setAudioSrc] = useState(savedCfg.audioSrc ?? '/hyoushigi.mp3');
   const [tz, setTz] = useState(savedCfg.tz ?? 'Asia/Tokyo');
   const [deadlineMs, setDeadlineMs] = useState(null);
@@ -234,7 +280,15 @@ export default function App() {
 
   return (
     <>
-      <audio ref={audioRef} src={audioSrc} preload="auto" />
+      <div>
+        {showInstallButton && (
+          <div style={{ padding: '1em', textAlign: 'center' }}>
+            <button onClick={handleInstallClick}>
+              アプリをインストールする
+            </button>
+          </div>
+        )}
+      　<audio ref={audioRef} src={audioSrc} preload="auto" />
         <div style={{ background: bg, color, minHeight: '100vh', padding: 20 }}>
         <h1>氣の呼吸法</h1>
         <div>
@@ -327,8 +381,10 @@ export default function App() {
             </button>
             <button onClick={resetToDefault}>デフォルトに戻す</button>
             </div>
+          </div>
         </div>
-
       </>
     );
 }
+
+export default App;
