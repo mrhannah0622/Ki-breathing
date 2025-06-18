@@ -12,6 +12,7 @@ export default defineConfig({
       manifest: '/manifest.webmanifest',
       injectRegister: 'auto',
       workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,mp3}'], // ← mp3 を追加
         runtimeCaching: [
           {
             urlPattern: ({request}) => request.destination === 'document',
@@ -35,6 +36,17 @@ export default defineConfig({
             options: {
               cacheName: 'media-cache'
             }
+          },
+          {
+            urlPattern: /\.(?:mp3)$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'audio-cache',
+              expiration: {
+                maxEntries: 5,
+                maxAgeSeconds: 60 * 60 * 24 * 30, // 30日
+              },
+            },
           }
         ],
         // ✅ オフライン時に fallback ページを返す

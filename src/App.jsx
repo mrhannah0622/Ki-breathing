@@ -4,16 +4,6 @@ import { DateTime } from 'luxon';
 function App() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallButton, setShowInstallButton] = useState(false);
-useEffect(() => {
-  window.addEventListener('beforeinstallprompt', (e) => {
-    console.log('✅ beforeinstallprompt イベントを検出', e);
-  });
-
-  window.addEventListener('appinstalled', () => {
-    console.log('✅ アプリがインストールされました');
-  });
-}, []);
-
 
   useEffect(() => {
     const handler = (e) => {
